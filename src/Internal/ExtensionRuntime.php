@@ -44,7 +44,7 @@ final class ExtensionRuntime implements Runtime
     public function finishRequest(): void
     {
         if (\function_exists('rapira_finish_request')) {
-            \rapira_finish_request();
+            rapira_finish_request();
         }
     }
 }
