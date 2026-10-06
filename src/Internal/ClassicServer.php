@@ -36,7 +36,7 @@ final readonly class ClassicServer
 
         $request = Request::capture();
         $response = $kernel->handle($request);
-        $response->send();
+        SapiResponse::send($response);
         rapira_finish_request();
 
         $kernel->terminate($request, $response);
