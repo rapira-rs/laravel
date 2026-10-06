@@ -1,0 +1,11 @@
+[http]
+listen = "127.0.0.1:8000"
+middleware = ["static"]
+
+[http.static]
+root = "public"
+
+[http.pool]
+entrypoint = "worker.php"
+# "dispatcher", "worker" or "classic": the same worker.php serves all three.
+mode = "dispatcher"
