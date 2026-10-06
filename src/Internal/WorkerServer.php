@@ -29,8 +29,11 @@ final readonly class WorkerServer
      */
     public function run(): void
     {
-        $handler = function (): void {
+        // The host keeps the worker serving only while the handler answers true.
+        $handler = function (): bool {
             $this->serve();
+
+            return true;
         };
 
         try {
