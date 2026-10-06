@@ -8,17 +8,19 @@ use Laravel\Octane\ApplicationFactory;
 use Laravel\Octane\Listeners\EnsureUploadedFilesAreValid;
 use Laravel\Octane\Listeners\EnsureUploadedFilesCanBeMoved;
 use Laravel\Octane\Worker;
+use Rapira\Http\HttpDispatcher;
 use Rapira\Laravel\Http\ExchangeEmitter;
 use Rapira\Laravel\Http\ExchangeRequestFactory;
 use Rapira\Laravel\Internal\ClassicServer;
 use Rapira\Laravel\Internal\DispatcherServer;
 use Rapira\Laravel\Internal\ErrorReporter;
-use Rapira\Laravel\Internal\ExtensionRuntime;
-use Rapira\Laravel\Internal\Runtime;
 use Rapira\Laravel\Internal\WorkerServer;
 use Rapira\Laravel\Octane\ExchangeClient;
 use Rapira\Laravel\Octane\SapiClient;
 use Rapira\Mode;
+
+use function Rapira\get_dispatcher;
+use function Rapira\get_mode;
 
 /**
  * Runs a Laravel application under Rapira.
@@ -39,24 +41,19 @@ use Rapira\Mode;
 final readonly class Runner
 {
     private string $basePath;
-    private Runtime $runtime;
 
     /**
      * @param string $basePath The application root, the directory holding `bootstrap/app.php`.
-     * @param Runtime|null $runtime Internal: replaces the Rapira extension in tests.
      */
-    public function __construct(
-        string $basePath,
-        ?Runtime $runtime = null,
-    ) {
+    public function __construct(string $basePath)
+    {
         $this->basePath = \rtrim($basePath, '/\\');
-        $this->runtime = $runtime ?? new ExtensionRuntime();
     }
 
     public function run(): void
     {
-        match ($this->runtime->mode()) {
-            Mode::Classic => (new ClassicServer($this->basePath, $this->runtime))->run(),
+        match (get_mode()) {
+            Mode::Classic => (new ClassicServer($this->basePath))->run(),
             Mode::Worker => $this->runWorker(),
             Mode::Dispatcher => $this->runDispatcher(),
         };
@@ -64,15 +61,20 @@ final readonly class Runner
 
     private function runWorker(): void
     {
-        $client = new SapiClient($this->runtime);
+        $client = new SapiClient();
         $worker = $this->bootWorker($client);
 
-        (new WorkerServer($worker, $client, $this->runtime, new ErrorReporter($worker->application())))->run();
+        (new WorkerServer($worker, $client, new ErrorReporter($worker->application())))->run();
     }
 
     private function runDispatcher(): void
     {
-        $dispatcher = $this->runtime->dispatcher();
+        $dispatcher = get_dispatcher();
+        // The pool may serve any plugin; this bridge speaks HTTP only.
+        $dispatcher instanceof HttpDispatcher or throw new \LogicException(
+            \sprintf('Only the "http" dispatcher is supported, "%s" was given.', $dispatcher->name()),
+        );
+
         $client = new ExchangeClient(
             new ExchangeRequestFactory($this->basePath . '/public'),
             new ExchangeEmitter(),

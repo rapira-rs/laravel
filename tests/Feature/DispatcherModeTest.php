@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Rapira\Laravel\Tests\Feature;
 
 use Rapira\Laravel\Runner;
-use Rapira\Laravel\Tests\Support\FakeExchange;
-use Rapira\Laravel\Tests\Support\FakeHttpDispatcher;
-use Rapira\Laravel\Tests\Support\FakeRuntime;
 use Rapira\Mode;
+use Rapira\Sdk\Testing\Double\FakeRuntime;
+use Rapira\Sdk\Testing\Double\Http\FakeExchange;
+use Rapira\Sdk\Testing\Double\Http\FakeHttpDispatcher;
 use Testo\Assert;
+use Testo\Lifecycle\AfterTest;
 use Testo\Test;
 
 /**
@@ -19,6 +20,12 @@ use Testo\Test;
 #[Test]
 final class DispatcherModeTest
 {
+    #[AfterTest]
+    public function resetRuntime(): void
+    {
+        FakeRuntime::reset();
+    }
+
     public function servesEveryExchangeUntilDrained(): void
     {
         $first = FakeExchange::for('/');
@@ -190,7 +197,8 @@ final class DispatcherModeTest
             $dispatcher->receives === 2 and $released = $reference->get() === null;
         };
 
-        (new Runner(\dirname(__DIR__) . '/App', new FakeRuntime(Mode::Dispatcher, $dispatcher)))->run();
+        (new FakeRuntime(Mode::Dispatcher, $dispatcher))->install();
+        (new Runner(\dirname(__DIR__) . '/App'))->run();
 
         Assert::true($released);
     }
@@ -198,7 +206,8 @@ final class DispatcherModeTest
     private function run(FakeExchange ...$exchanges): FakeHttpDispatcher
     {
         $dispatcher = new FakeHttpDispatcher(...$exchanges);
-        (new Runner(\dirname(__DIR__) . '/App', new FakeRuntime(Mode::Dispatcher, $dispatcher)))->run();
+        (new FakeRuntime(Mode::Dispatcher, $dispatcher))->install();
+        (new Runner(\dirname(__DIR__) . '/App'))->run();
 
         return $dispatcher;
     }
