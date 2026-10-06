@@ -6,7 +6,7 @@
 on:  # yamllint disable-line rule:truthy
   push:
     branches:
-      - main
+      - 1.x
   # Manual re-trigger, mirroring release-please's own post-merge run.
   workflow_dispatch:
 
@@ -35,6 +35,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: .github/release-please/config.json
           manifest-file: .github/release-please/version.json
-          target-branch: main
+          target-branch: 1.x
 
 ...
