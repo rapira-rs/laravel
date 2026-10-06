@@ -27,7 +27,7 @@
         "php": ">=8.4",
         "laravel/framework": "^11.0 || ^12.0 || ^13.0",
         "laravel/octane": "^2.13",
-        "rapira/contract": "@dev",
+        "rapira/contract": "^0.9",
         "symfony/http-foundation": "^7.0 || ^8.0"
     },
     "require-dev": {
