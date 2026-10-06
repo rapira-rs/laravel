@@ -27,6 +27,8 @@ composer require rapira/laravel
 
 ## Usage
 
+The `rapira` server binary is installed separately: get it from the [download page](https://rapira.rs/download).
+
 Publish the entry script and a starter server config into the project root:
 
 ```bash
