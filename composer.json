@@ -33,6 +33,7 @@
     "require-dev": {
         "llm/skills": "^1.14",
         "rapira/testing": "^0.1.6",
+        "roxblnfk/unpoly": "^1.8",
         "spiral/code-style": "^2.3",
         "testo/assert": "^0.1.13",
         "testo/lifecycle": "^0.1.5",
