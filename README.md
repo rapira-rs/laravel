@@ -17,7 +17,7 @@ Runs a Laravel application under [Rapira](https://rapira.rs/) in every run mode 
 ## Install
 
 ```bash
-composer require rapira/laravel rapira/contract:@dev
+composer require rapira/laravel
 ```
 
 [![PHP](https://img.shields.io/packagist/php-v/rapira/laravel.svg?style=flat-square&logo=php)](https://packagist.org/packages/rapira/laravel)
