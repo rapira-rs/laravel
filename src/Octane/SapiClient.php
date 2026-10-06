@@ -10,6 +10,7 @@ use Laravel\Octane\Contracts\StoppableClient;
 use Laravel\Octane\Octane;
 use Laravel\Octane\OctaneResponse;
 use Laravel\Octane\RequestContext;
+use Rapira\Laravel\Internal\SapiResponse;
 use Rapira\Mode;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -41,7 +42,7 @@ final class SapiClient implements StoppableClient
             $response->setContent($octaneResponse->outputBuffer . $response->getContent());
         }
 
-        $response->send();
+        SapiResponse::send($response);
         // What php-fpm does with `fastcgi_finish_request()`: the client has its answer while the
         // terminating middleware and Octane's own cleanup still run.
         rapira_finish_request();
@@ -61,11 +62,11 @@ final class SapiClient implements StoppableClient
             return;
         }
 
-        (new Response(
+        SapiResponse::send(new Response(
             Octane::formatExceptionForClient($e, $debug),
             500,
             ['Content-Type' => 'text/plain; charset=UTF-8'],
-        ))->send();
+        ));
         rapira_finish_request();
     }
 
