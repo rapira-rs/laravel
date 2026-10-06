@@ -9,6 +9,8 @@ use Laravel\Octane\Worker;
 use Rapira\Laravel\Octane\SapiClient;
 use Rapira\Mode;
 
+use function Rapira\handle_request;
+
 /**
  * Serves {@see Mode::Worker}: the loop over `Rapira\handle_request()`, each request run through the
  * Octane worker.
@@ -20,7 +22,6 @@ final readonly class WorkerServer
     public function __construct(
         private Worker $worker,
         private SapiClient $client,
-        private Runtime $runtime,
         private ErrorReporter $reporter,
     ) {}
 
@@ -37,7 +38,7 @@ final readonly class WorkerServer
         };
 
         try {
-            while (!$this->client->isStopped() && $this->runtime->handleRequest($handler)) {
+            while (!$this->client->isStopped() && handle_request($handler)) {
                 \gc_collect_cycles();
             }
         } finally {

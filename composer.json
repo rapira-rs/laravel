@@ -32,7 +32,7 @@
     },
     "require-dev": {
         "llm/skills": "^1.14",
-        "rapira/testing": "^0.1.4",
+        "rapira/testing": "^0.1.6",
         "spiral/code-style": "^2.3",
         "testo/assert": "^0.1.13",
         "testo/lifecycle": "^0.1.5",

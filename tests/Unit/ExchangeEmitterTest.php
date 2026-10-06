@@ -6,7 +6,7 @@ namespace Rapira\Laravel\Tests\Unit;
 
 use Rapira\Exception\WorkDiscardedException;
 use Rapira\Laravel\Http\ExchangeEmitter;
-use Rapira\Laravel\Tests\Support\FakeExchange;
+use Rapira\Sdk\Testing\Double\Http\FakeExchange;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;

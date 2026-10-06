@@ -9,7 +9,7 @@ use Rapira\Http\FormField;
 use Rapira\Http\Multipart;
 use Rapira\Http\UploadedFile;
 use Rapira\Laravel\Http\ExchangeRequestFactory;
-use Rapira\Laravel\Tests\Support\FakeExchange;
+use Rapira\Sdk\Testing\Double\Http\FakeExchange;
 use Symfony\Component\HttpFoundation\File\UploadedFile as SymfonyUploadedFile;
 use Testo\Assert;
 use Testo\Test;

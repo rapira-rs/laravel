@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Rapira\Laravel\Tests\Feature;
 
 use Rapira\Laravel\Runner;
-use Rapira\Laravel\Tests\Support\FakeRuntime;
 use Rapira\Mode;
+use Rapira\Sdk\Testing\Double\FakeRuntime;
 use Testo\Assert;
+use Testo\Lifecycle\AfterTest;
 use Testo\Test;
 
 /**
@@ -17,9 +18,15 @@ use Testo\Test;
 #[Test]
 final class WorkerModeTest
 {
+    #[AfterTest]
+    public function resetRuntime(): void
+    {
+        FakeRuntime::reset();
+    }
+
     public function servesEveryRequestUntilTheHostDrains(): void
     {
-        $runtime = (new FakeRuntime(Mode::Worker))
+        $runtime = (new FakeRuntime(Mode::Worker, captureOutput: true))
             ->queue('GET', '/')
             ->queue('GET', '/hello/Rapira?x=1');
 
@@ -30,7 +37,7 @@ final class WorkerModeTest
 
     public function stateDoesNotLeakIntoTheNextRequest(): void
     {
-        $runtime = (new FakeRuntime(Mode::Worker))
+        $runtime = (new FakeRuntime(Mode::Worker, captureOutput: true))
             ->queue('GET', '/config/leak')
             ->queue('GET', '/config/check');
 
@@ -41,18 +48,18 @@ final class WorkerModeTest
 
     public function responseIsFinishedBeforeTheRequestTerminates(): void
     {
-        $runtime = (new FakeRuntime(Mode::Worker))
+        $runtime = (new FakeRuntime(Mode::Worker, captureOutput: true))
             ->queue('GET', '/')
             ->queue('GET', '/');
 
         $this->run($runtime);
 
-        Assert::same($runtime->finishRequestCalls, 2);
+        Assert::same($runtime->finishedRequests, 2);
     }
 
     public function routeFailureIsAnsweredByTheApplicationAndTheWorkerGoesOn(): void
     {
-        $runtime = (new FakeRuntime(Mode::Worker))
+        $runtime = (new FakeRuntime(Mode::Worker, captureOutput: true))
             ->queue('GET', '/fail')
             ->queue('GET', '/');
 
@@ -64,7 +71,7 @@ final class WorkerModeTest
 
     public function printedOutputLeadsTheResponse(): void
     {
-        $runtime = (new FakeRuntime(Mode::Worker))->queue('GET', '/echo-output');
+        $runtime = (new FakeRuntime(Mode::Worker, captureOutput: true))->queue('GET', '/echo-output');
 
         $this->run($runtime);
 
@@ -73,7 +80,7 @@ final class WorkerModeTest
 
     public function streamFailureStopsTheWorker(): void
     {
-        $runtime = (new FakeRuntime(Mode::Worker))
+        $runtime = (new FakeRuntime(Mode::Worker, captureOutput: true))
             ->queue('GET', '/stream/fail')
             ->queue('GET', '/');
 
@@ -84,7 +91,7 @@ final class WorkerModeTest
 
     public function requestDataReachesTheApplication(): void
     {
-        $runtime = (new FakeRuntime(Mode::Worker))->queue(
+        $runtime = (new FakeRuntime(Mode::Worker, captureOutput: true))->queue(
             'GET',
             '/inspect?q=1',
             ['HTTP_X_CUSTOM' => 'value', 'REMOTE_ADDR' => '10.0.0.7'],
@@ -121,11 +128,12 @@ final class WorkerModeTest
         }
 
         Assert::same($output, 'Hello, Classic!');
-        Assert::same($runtime->finishRequestCalls, 1);
+        Assert::same($runtime->finishedRequests, 1);
     }
 
     private function run(FakeRuntime $runtime): void
     {
-        (new Runner(\dirname(__DIR__) . '/App', $runtime))->run();
+        $runtime->install();
+        (new Runner(\dirname(__DIR__) . '/App'))->run();
     }
 }

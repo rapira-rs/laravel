@@ -19,7 +19,6 @@ final readonly class ClassicServer
 {
     public function __construct(
         private string $basePath,
-        private Runtime $runtime,
     ) {}
 
     public function run(): void
@@ -38,7 +37,7 @@ final readonly class ClassicServer
         $request = Request::capture();
         $response = $kernel->handle($request);
         $response->send();
-        $this->runtime->finishRequest();
+        rapira_finish_request();
 
         $kernel->terminate($request, $response);
     }
