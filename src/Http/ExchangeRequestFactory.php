@@ -91,8 +91,10 @@ final readonly class ExchangeRequestFactory
         if ($request->remote instanceof InetAddress) {
             $params['REMOTE_ADDR'] = $request->remote->ip;
             $params['REMOTE_PORT'] = $request->remote->port;
-        } elseif ($request->remote->path !== null) {
-            $params['REMOTE_ADDR'] = $request->remote->path;
+        } else {
+            // REMOTE_ADDR must hold a host number (RFC 3875 §4.1.8), so the SAPI puts loopback in for a unix peer.
+            $params['REMOTE_ADDR'] = '127.0.0.1';
+            $params['REMOTE_PORT'] = 0;
         }
 
         if ($request->server instanceof InetAddress) {
@@ -100,7 +102,10 @@ final readonly class ExchangeRequestFactory
             $params['SERVER_PORT'] = $request->server->port;
         }
 
-        $host = \parse_url($request->uri, \PHP_URL_HOST);
+        // Only an absent authority makes the URI's host a server value: the host then synthesizes it from the
+        // listener, or from the configured server name on a unix socket. A client-sent authority must not pass
+        // for one, and Symfony's getHost() reads SERVER_NAME only when HTTP_HOST is missing.
+        $host = $request->authority === null ? \parse_url($request->uri, \PHP_URL_HOST) : null;
         if (\is_string($host) && $host !== '') {
             $params['SERVER_NAME'] = \trim($host, '[]');
         }

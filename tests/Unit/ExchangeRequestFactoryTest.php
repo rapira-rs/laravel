@@ -7,7 +7,10 @@ namespace Rapira\Laravel\Tests\Unit;
 use Illuminate\Http\Request;
 use Rapira\Http\FormField;
 use Rapira\Http\Multipart;
+use Rapira\Http\Request as RapiraRequest;
 use Rapira\Http\UploadedFile;
+use Rapira\InetAddress;
+use Rapira\UnixAddress;
 use Rapira\Laravel\Http\ExchangeRequestFactory;
 use Rapira\Sdk\Testing\Double\Http\FakeExchange;
 use Symfony\Component\HttpFoundation\File\UploadedFile as SymfonyUploadedFile;
@@ -56,7 +59,7 @@ final class ExchangeRequestFactoryTest
         Assert::same($request->ip(), '10.0.0.7');
         Assert::same($request->server('REMOTE_PORT'), 40000);
         Assert::same($request->server('SERVER_PORT'), 8080);
-        Assert::same($request->server('SERVER_NAME'), 'localhost');
+        Assert::null($request->server('SERVER_NAME'));
         Assert::same($request->server('REQUEST_TIME'), 1_700_000_000);
         Assert::same($request->server('REQUEST_TIME_FLOAT'), 1_700_000_000.25);
         Assert::same($request->server('SERVER_SOFTWARE'), 'Rapira');
@@ -64,6 +67,26 @@ final class ExchangeRequestFactoryTest
         Assert::same($request->getHost(), 'localhost');
         Assert::same($request->getPort(), 8080);
         Assert::false($request->secure());
+    }
+
+    public function unixPeerIsLoopback(): void
+    {
+        $request = $this->create(new FakeExchange(self::request(remote: new UnixAddress(null))));
+
+        Assert::same($request->ip(), '127.0.0.1');
+        Assert::same($request->server('REMOTE_PORT'), 0);
+    }
+
+    public function hostWithoutAuthorityComesFromTheSynthesizedUri(): void
+    {
+        $request = $this->create(new FakeExchange(self::request(
+            uri: 'http://app.internal:80/',
+            authority: null,
+            server: new UnixAddress('/run/rapira.sock'),
+        )));
+
+        Assert::same($request->server('SERVER_NAME'), 'app.internal');
+        Assert::same($request->getHost(), 'app.internal');
     }
 
     public function headersAreNamedTheWayTheSapiNamesThem(): void
@@ -204,6 +227,27 @@ final class ExchangeRequestFactoryTest
         } finally {
             @\unlink($tmp);
         }
+    }
+
+    private static function request(
+        string $uri = 'http://localhost:8080/',
+        ?string $authority = 'localhost:8080',
+        InetAddress|UnixAddress $remote = new InetAddress('10.0.0.7', 40000),
+        InetAddress|UnixAddress $server = new InetAddress('127.0.0.1', 8080),
+    ): RapiraRequest {
+        return new RapiraRequest(
+            method: 'GET',
+            uri: $uri,
+            target: '/',
+            authority: $authority,
+            protocol: 'HTTP/1.1',
+            headers: [],
+            body: '',
+            remote: $remote,
+            server: $server,
+            tls: null,
+            receivedAt: 1_700_000_000.25,
+        );
     }
 
     private function create(FakeExchange $exchange): Request
