@@ -105,10 +105,15 @@ final readonly class ExchangeRequestFactory
             $params['SERVER_NAME'] = \trim($host, '[]');
         }
 
-        // The rapira SAPI names fields the same way in worker mode: `-` and `.` become `_`, and a later
-        // field overwrites an earlier one that maps to the same name.
+        // In worker mode the host drops a field named outside `[A-Za-z0-9-]` before filling `$_SERVER`, and in
+        // dispatcher mode passes it through: `X_Forwarded_For` or `X.Forwarded.For` would pose as
+        // `HTTP_X_FORWARDED_FOR`, and Symfony builds its headers from these params.
         foreach ($request->headers as $name => $values) {
-            $key = \strtoupper(\str_replace(['-', '.'], '_', $name));
+            if (\preg_match('/^[A-Za-z0-9-]+$/D', $name) !== 1) {
+                continue;
+            }
+
+            $key = \strtoupper(\str_replace('-', '_', $name));
             $value = \implode($key === 'COOKIE' ? '; ' : ', ', $values);
             $params['HTTP_' . $key] = $value;
             if ($key === 'CONTENT_TYPE' || $key === 'CONTENT_LENGTH') {
