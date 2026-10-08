@@ -71,12 +71,25 @@ final class ExchangeRequestFactoryTest
         $request = $this->create(FakeExchange::for('/', headers: [
             'content-type' => ['text/plain'],
             'content-length' => ['3'],
-            'x.dotted' => ['yes'],
+            'x-custom' => ['yes'],
         ]));
 
         Assert::same($request->server('CONTENT_TYPE'), 'text/plain');
         Assert::same($request->server('CONTENT_LENGTH'), '3');
-        Assert::same($request->server('HTTP_X_DOTTED'), 'yes');
+        Assert::same($request->server('HTTP_X_CUSTOM'), 'yes');
+    }
+
+    public function fieldNameThatWouldAliasAnotherIsLeftOut(): void
+    {
+        $request = $this->create(FakeExchange::for('/', headers: [
+            'X_Forwarded_For' => ['203.0.113.1'],
+            'X.Forwarded.Host' => ['evil.example'],
+        ]));
+
+        Assert::null($request->server('HTTP_X_FORWARDED_FOR'));
+        Assert::null($request->server('HTTP_X_FORWARDED_HOST'));
+        Assert::null($request->header('x-forwarded-for'));
+        Assert::same($request->ip(), '10.0.0.7');
     }
 
     public function httpsSchemeMarksTheRequestSecure(): void
